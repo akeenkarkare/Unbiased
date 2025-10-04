@@ -3,10 +3,10 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { mockArticles, mockComments, mockCommentsSummary } from "@/lib/data";
-import BiasGauge from "@/components/BiasGauge";
 
-export default function ArticlePage({ params }: { params: Promise<{ id: string }> }) {
+export default function ArticlePage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams?: { fromSearch?: string } }) {
   const { id } = use(params);
+  const isFromSearch = searchParams?.fromSearch === 'true';
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [comments, setComments] = useState(mockComments[id] || []);
   const [newComment, setNewComment] = useState("");
@@ -14,6 +14,9 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
 
   const article = mockArticles.find((a) => a.id === id);
   const commentsSummary = mockCommentsSummary[id];
+
+  // Only show comments for homepage articles, not search results
+  const showComments = !isFromSearch;
 
   if (!article) {
     return (
@@ -72,13 +75,10 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
           <main className="flex-1" onTouchEnd={handleSwipe}>
             <article className="bg-[#fefdfb] border border-stone-200 rounded-2xl p-10">
               <div className="mb-8">
-                <div className="flex items-start justify-between gap-6 mb-6">
-                  <h1 className="text-4xl font-light text-stone-900 leading-tight flex-1">
+                <div className="mb-6">
+                  <h1 className="text-4xl font-light text-stone-900 leading-tight">
                     {article.title}
                   </h1>
-                  <div className="flex-shrink-0">
-                    <BiasGauge bias={article.biasPercentage} size="large" />
-                  </div>
                 </div>
 
                 <div className="flex items-center gap-4 text-sm text-stone-500 font-light">
@@ -89,24 +89,58 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
               </div>
 
               <div className="prose prose-stone max-w-none">
-                <p className="text-lg text-stone-500 leading-relaxed font-light">
-                  <span className="text-stone-400 text-sm tracking-wide mr-2">UNBIASED</span>
-                  {article.unbiasedContent}
+                <p className="text-lg text-stone-700 leading-relaxed font-light">
+                  {article.content}
                 </p>
               </div>
 
-              {/* Mobile: Show Comments Button */}
-              <button
-                onClick={() => setIsCommentsOpen(true)}
-                className="lg:hidden mt-8 w-full bg-stone-800 text-stone-50 py-3 rounded-xl font-light hover:bg-stone-700 transition-colors"
-              >
-                View Comments ({comments.length})
-              </button>
+              {/* Mobile: Show Comments Button - Only for homepage articles */}
+              {showComments && (
+                <button
+                  onClick={() => setIsCommentsOpen(true)}
+                  className="lg:hidden mt-8 w-full bg-stone-800 text-stone-50 py-3 rounded-xl font-light hover:bg-stone-700 transition-colors"
+                >
+                  View Comments ({comments.length})
+                </button>
+              )}
             </article>
           </main>
 
-          {/* Desktop: Comments on Right Side */}
-          <aside className="hidden lg:block w-96 sticky top-24">
+          {/* Desktop: Comments on Right Side - Only for homepage articles */}
+          {showComments && (
+            <aside className="hidden lg:block w-96 sticky top-24">
+              <CommentsSection
+                comments={comments}
+                commentsSummary={commentsSummary}
+                newComment={newComment}
+                setNewComment={setNewComment}
+                authorName={authorName}
+                setAuthorName={setAuthorName}
+                handleAddComment={handleAddComment}
+              />
+            </aside>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile: Sliding Comments Panel - Only for homepage articles */}
+      {showComments && (
+        <div
+          className={`fixed inset-y-0 right-0 w-full bg-[#fafaf9] z-50 transform transition-transform duration-300 lg:hidden ${
+            isCommentsOpen ? "translate-x-0" : "translate-x-full"
+          }`}
+        >
+          <div className="h-full flex flex-col">
+            <div className="bg-[#f5f4f0] border-b border-stone-200 px-6 py-6 flex items-center justify-between">
+              <h2 className="text-xl font-light text-stone-900">Comments</h2>
+              <button
+                onClick={() => setIsCommentsOpen(false)}
+                className="text-stone-500 hover:text-stone-900 text-2xl font-light"
+              >
+                ×
+              </button>
+            </div>
+
             <CommentsSection
               comments={comments}
               commentsSummary={commentsSummary}
@@ -116,38 +150,9 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
               setAuthorName={setAuthorName}
               handleAddComment={handleAddComment}
             />
-          </aside>
-        </div>
-      </div>
-
-      {/* Mobile: Sliding Comments Panel */}
-      <div
-        className={`fixed inset-y-0 right-0 w-full bg-[#fafaf9] z-50 transform transition-transform duration-300 lg:hidden ${
-          isCommentsOpen ? "translate-x-0" : "translate-x-full"
-        }`}
-      >
-        <div className="h-full flex flex-col">
-          <div className="bg-[#f5f4f0] border-b border-stone-200 px-6 py-6 flex items-center justify-between">
-            <h2 className="text-xl font-light text-stone-900">Comments</h2>
-            <button
-              onClick={() => setIsCommentsOpen(false)}
-              className="text-stone-500 hover:text-stone-900 text-2xl font-light"
-            >
-              ×
-            </button>
           </div>
-
-          <CommentsSection
-            comments={comments}
-            commentsSummary={commentsSummary}
-            newComment={newComment}
-            setNewComment={setNewComment}
-            authorName={authorName}
-            setAuthorName={setAuthorName}
-            handleAddComment={handleAddComment}
-          />
         </div>
-      </div>
+      )}
     </div>
   );
 }

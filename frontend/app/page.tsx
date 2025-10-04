@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { mockArticles } from "@/lib/data";
 import { useState } from "react";
-import BiasGauge from "@/components/BiasGauge";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -91,9 +90,6 @@ export default function Home() {
                       </>
                     )}
                   </div>
-                </div>
-                <div className="flex-shrink-0">
-                  <BiasGauge bias={article.biasPercentage} size="small" />
                 </div>
               </div>
             </Link>

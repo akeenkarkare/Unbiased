@@ -2,7 +2,6 @@ export interface Article {
   id: string;
   title: string;
   summary: string;
-  biasPercentage: number;
   content: string;
   publishedAt: string;
   source: string;
@@ -27,7 +26,6 @@ export const mockArticles: Article[] = [
     id: "1",
     title: "Global Climate Summit Reaches Historic Agreement",
     summary: "World leaders agree on ambitious carbon reduction targets at international summit.",
-    biasPercentage: 15,
     content: "In a landmark decision, representatives from over 150 countries have agreed to implement stricter carbon emission standards. The agreement includes provisions for renewable energy investment and sustainable development goals.",
     publishedAt: "2025-10-03",
     source: "Global News Network",
