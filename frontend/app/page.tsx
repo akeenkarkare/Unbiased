@@ -3,19 +3,7 @@
 import Link from "next/link";
 import { mockArticles } from "@/lib/data";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-
-function getBiasColor(bias: number) {
-  if (bias < 20) return "text-emerald-700";
-  if (bias < 40) return "text-amber-700";
-  return "text-rose-700";
-}
-
-function getBiasBgColor(bias: number) {
-  if (bias < 20) return "bg-emerald-50";
-  if (bias < 40) return "bg-amber-50";
-  return "bg-rose-50";
-}
+import BiasGauge from "@/components/BiasGauge";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -83,24 +71,24 @@ export default function Home() {
                   <p className="text-stone-600 text-base font-light leading-relaxed">
                     {article.summary}
                   </p>
-                  
+
                   {article.perspectives && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-stone-100">
                       <div className="space-y-2">
-                        <h4 className="text-xs font-medium text-emerald-700 uppercase tracking-wide">For</h4>
+                        <h4 className="text-xs font-medium text-rose-700 uppercase tracking-wide">For</h4>
                         <p className="text-sm text-stone-600 font-light leading-relaxed">{article.perspectives.for}</p>
                       </div>
                       <div className="space-y-2">
-                        <h4 className="text-xs font-medium text-rose-700 uppercase tracking-wide">Against</h4>
-                        <p className="text-sm text-stone-600 font-light leading-relaxed">{article.perspectives.against}</p>
+                        <h4 className="text-xs font-medium text-amber-700 uppercase tracking-wide">Unbiased</h4>
+                        <p className="text-sm text-stone-600 font-light leading-relaxed">{article.perspectives.neutral}</p>
                       </div>
                       <div className="space-y-2">
-                        <h4 className="text-xs font-medium text-amber-700 uppercase tracking-wide">Context</h4>
-                        <p className="text-sm text-stone-600 font-light leading-relaxed">{article.perspectives.neutral}</p>
+                        <h4 className="text-xs font-medium text-emerald-700 uppercase tracking-wide">Against</h4>
+                        <p className="text-sm text-stone-600 font-light leading-relaxed">{article.perspectives.against}</p>
                       </div>
                     </div>
                   )}
-                  
+
                   <div className="flex items-center gap-4 text-sm text-stone-500 font-light pt-2">
                     <span className="text-stone-700">{article.source}</span>
                     <span className="w-1 h-1 rounded-full bg-stone-300"></span>
@@ -114,12 +102,7 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="flex-shrink-0">
-                  <div className={`${getBiasBgColor(article.biasPercentage)} rounded-xl px-6 py-4 text-center border border-stone-200`}>
-                    <div className={`text-3xl font-light ${getBiasColor(article.biasPercentage)}`}>
-                      {article.biasPercentage}%
-                    </div>
-                    <div className="text-xs text-stone-600 mt-1 font-light tracking-wide">BIAS</div>
-                  </div>
+                  <BiasGauge bias={article.biasPercentage} size="small" />
                 </div>
               </div>
             </Link>
