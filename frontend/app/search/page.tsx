@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -10,7 +10,6 @@ interface Article {
   summary: string;
   source: string;
   publishedAt: string;
-  biasPercentage?: number;
   perspectives?: {
     for: string;
     against: string;
@@ -18,19 +17,7 @@ interface Article {
   };
 }
 
-function getBiasColor(bias: number) {
-  if (bias < 20) return "text-emerald-700";
-  if (bias < 40) return "text-amber-700";
-  return "text-rose-700";
-}
-
-function getBiasBgColor(bias: number) {
-  if (bias < 20) return "bg-emerald-50";
-  if (bias < 40) return "bg-amber-50";
-  return "bg-rose-50";
-}
-
-export default function SearchPage() {
+function SearchResults() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
   const [articles, setArticles] = useState<Article[]>([]);
@@ -159,23 +146,13 @@ export default function SearchPage() {
                       <span>{new Date(article.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                     </div>
                   </div>
-                  {article.biasPercentage && (
-                    <div className="flex-shrink-0">
-                      <div className={`${getBiasBgColor(article.biasPercentage)} rounded-xl px-6 py-4 text-center border border-stone-200`}>
-                        <div className={`text-3xl font-light ${getBiasColor(article.biasPercentage)}`}>
-                          {article.biasPercentage}%
-                        </div>
-                        <div className="text-xs text-stone-600 mt-1 font-light tracking-wide">BIAS</div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             ))}
 
             <div className="text-center pt-8">
-              <Link 
-                href="/" 
+              <Link
+                href="/"
                 className="inline-block text-stone-700 hover:text-stone-900 font-light underline"
               >
                 Return to featured stories
@@ -185,5 +162,20 @@ export default function SearchPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#fafaf9] flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-stone-900"></div>
+          <p className="mt-4 text-stone-600 font-light">Loading search...</p>
+        </div>
+      </div>
+    }>
+      <SearchResults />
+    </Suspense>
   );
 }
