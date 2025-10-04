@@ -14,40 +14,46 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Gemini API key not configured' }, { status: 500 });
     }
 
-    const prompt = `Find recent news articles about "${query}". Present information about this topic from multiple perspectives. For each relevant news story, provide the title, a brief summary, the source, and publication date.
+    const prompt = `You are a real-time perspective analysis and structured data extraction assistant. Your sole task is to analyze the input term and strictly adhere to the defined output structure and constraints.
 
-Then present three different viewpoints on this topic:
-- Supporting arguments and evidence
-- Critical arguments and concerns  
-- Background context and balanced analysis
+INPUT TERM: ${query}
 
-Format as a JSON array:
+ACTION & FOCUS:
+Find a minimum of 3-5 high-quality, diverse, and recent sources for the INPUT TERM. Identify the most important, current, and hotly debated point or recent news development. Extract information and categorize it into three required perspectives.
+
+OUTPUT FORMAT - Return as JSON array:
 [
   {
-    "title": "News article title",
-    "summary": "Brief article summary",
-    "source": "News source name",
+    "title": "Current debate or main topic about ${query}",
+    "summary": "Core definition/description (maximum 100 words): A concise, factual explanation of the INPUT TERM or the most current news/debate",
+    "source": "Primary news source",
     "publishedAt": "2025-10-04",
     "perspectives": {
-      "for": "Supporting arguments and evidence",
-      "against": "Critical arguments and concerns",
-      "neutral": "Background context and analysis"
+      "for": "In Support/Pros: Arguments for the INPUT TERM's current application or supporting position. Include 2-3 key points with factual claims.",
+      "against": "In Dissent/Cons: Arguments against the INPUT TERM's current application or dissenting position. Include 2-3 key points with factual claims.",
+      "neutral": "Neutral Facts: Purely descriptive, historical, or background information without bias. Include 2-3 key factual points about current status/timeline."
     }
   }
 ]
 
-Provide 3-5 relevant news stories. Focus on factual reporting from credible sources.`;
+STRICT CONSTRAINTS:
+- Return ONLY the JSON array, no other text
+- Every perspective must contain factual, cited information
+- Focus on current debates and recent developments
+- Include only verified, credible source information`;
 
     const ai = new GoogleGenAI({ apiKey });
+    const groundingTool = {
+      googleSearch: {},
+    };
+    const config = {
+      tools: [groundingTool],
+    };
     
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.5-pro",
       contents: prompt,
-      config: {
-        thinkingConfig: {
-          thinkingBudget: 0, // Disables thinking for faster response
-        },
-      }
+      config: config,
     });
 
     const generatedText = response.text;
@@ -94,7 +100,7 @@ Provide 3-5 relevant news stories. Focus on factual reporting from credible sour
     }
 
     // Add IDs if missing
-    articles = articles.map((article, index) => ({
+    articles = articles.map((article: any, index: number) => ({
       ...article,
       id: article.id || `search-${Date.now()}-${index}`
     }));
