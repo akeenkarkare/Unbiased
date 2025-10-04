@@ -4,6 +4,18 @@ import { use, useState } from "react";
 import Link from "next/link";
 import { mockArticles, mockComments, mockCommentsSummary } from "@/lib/data";
 
+function getBiasColor(bias: number) {
+  if (bias < 20) return "text-emerald-700";
+  if (bias < 40) return "text-amber-700";
+  return "text-rose-700";
+}
+
+function getBiasBgColor(bias: number) {
+  if (bias < 20) return "bg-emerald-50";
+  if (bias < 40) return "bg-amber-50";
+  return "bg-rose-50";
+}
+
 export default function ArticlePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
@@ -16,10 +28,10 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
 
   if (!article) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-[#fafaf9]">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Article not found</h1>
-          <Link href="/" className="text-blue-600 hover:underline mt-4 block">
+          <h1 className="text-2xl font-light text-stone-900">Article not found</h1>
+          <Link href="/" className="text-stone-600 hover:text-stone-900 mt-4 block font-light">
             Return to homepage
           </Link>
         </div>
@@ -53,87 +65,88 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#fafaf9]">
       {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
-          <Link href="/" className="text-blue-600 hover:text-blue-800">
+      <header className="bg-[#f5f4f0] border-b border-stone-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-6 py-6 flex items-center gap-4">
+          <Link href="/" className="text-stone-600 hover:text-stone-900 transition-colors font-light">
             ← Back
           </Link>
-          <h1 className="text-xl font-bold text-gray-900">Unbiased News</h1>
+          <h1 className="text-xl font-light tracking-tight text-stone-900">Unbiased</h1>
         </div>
       </header>
 
-      {/* Main Article */}
-      <main
-        className="max-w-4xl mx-auto px-4 py-8"
-        onTouchEnd={handleSwipe}
-      >
-        <article className="bg-white rounded-lg shadow-sm p-6 md:p-8">
-          <div className="flex items-start justify-between gap-4 mb-6">
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                {article.title}
-              </h1>
-              <div className="flex items-center gap-3 text-sm text-gray-500">
-                <span>{article.source}</span>
-                <span>•</span>
-                <span>{article.publishedAt}</span>
-              </div>
-            </div>
-            <div className="flex-shrink-0">
-              <div className="text-center bg-blue-50 rounded-lg p-3">
-                <div className="text-3xl font-bold text-blue-600">
-                  {article.biasPercentage}%
+      {/* Main Layout: Article + Comments Side by Side */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="flex gap-8 items-start">
+          {/* Article Content */}
+          <main className="flex-1" onTouchEnd={handleSwipe}>
+            <article className="bg-[#fefdfb] border border-stone-200 rounded-2xl p-10">
+              <div className="mb-8">
+                <div className="flex items-start justify-between gap-6 mb-6">
+                  <h1 className="text-4xl font-light text-stone-900 leading-tight flex-1">
+                    {article.title}
+                  </h1>
+                  <div className={`${getBiasBgColor(article.biasPercentage)} rounded-xl px-6 py-4 text-center border border-stone-200 flex-shrink-0`}>
+                    <div className={`text-3xl font-light ${getBiasColor(article.biasPercentage)}`}>
+                      {article.biasPercentage}%
+                    </div>
+                    <div className="text-xs text-stone-600 mt-1 font-light tracking-wide">BIAS</div>
+                  </div>
                 </div>
-                <div className="text-xs text-gray-600 mt-1">Bias Score</div>
+
+                <div className="flex items-center gap-4 text-sm text-stone-500 font-light">
+                  <span className="text-stone-700">{article.source}</span>
+                  <span className="w-1 h-1 rounded-full bg-stone-300"></span>
+                  <span>{new Date(article.publishedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                </div>
               </div>
-            </div>
-          </div>
 
-          <div className="prose max-w-none">
-            <p className="text-lg text-gray-700 leading-relaxed">
-              {article.content}
-            </p>
-          </div>
+              <div className="prose prose-stone max-w-none">
+                <p className="text-lg text-stone-700 leading-relaxed font-light">
+                  {article.content}
+                </p>
+              </div>
 
-          {/* Mobile: Show Comments Button */}
-          <button
-            onClick={() => setIsCommentsOpen(true)}
-            className="md:hidden mt-6 w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-          >
-            View Comments ({comments.length})
-          </button>
-        </article>
+              {/* Mobile: Show Comments Button */}
+              <button
+                onClick={() => setIsCommentsOpen(true)}
+                className="lg:hidden mt-8 w-full bg-stone-800 text-stone-50 py-3 rounded-xl font-light hover:bg-stone-700 transition-colors"
+              >
+                View Comments ({comments.length})
+              </button>
+            </article>
+          </main>
 
-        {/* Desktop: Show Comments Below */}
-        <div className="hidden md:block mt-8">
-          <CommentsSection
-            comments={comments}
-            commentsSummary={commentsSummary}
-            newComment={newComment}
-            setNewComment={setNewComment}
-            authorName={authorName}
-            setAuthorName={setAuthorName}
-            handleAddComment={handleAddComment}
-          />
+          {/* Desktop: Comments on Right Side */}
+          <aside className="hidden lg:block w-96 sticky top-24">
+            <CommentsSection
+              comments={comments}
+              commentsSummary={commentsSummary}
+              newComment={newComment}
+              setNewComment={setNewComment}
+              authorName={authorName}
+              setAuthorName={setAuthorName}
+              handleAddComment={handleAddComment}
+            />
+          </aside>
         </div>
-      </main>
+      </div>
 
       {/* Mobile: Sliding Comments Panel */}
       <div
-        className={`fixed inset-y-0 right-0 w-full bg-white z-50 transform transition-transform duration-300 md:hidden ${
+        className={`fixed inset-y-0 right-0 w-full bg-[#fafaf9] z-50 transform transition-transform duration-300 lg:hidden ${
           isCommentsOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
         <div className="h-full flex flex-col">
-          <div className="bg-white border-b px-4 py-4 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-900">Comments</h2>
+          <div className="bg-[#f5f4f0] border-b border-stone-200 px-6 py-6 flex items-center justify-between">
+            <h2 className="text-xl font-light text-stone-900">Comments</h2>
             <button
               onClick={() => setIsCommentsOpen(false)}
-              className="text-gray-500 hover:text-gray-700"
+              className="text-stone-500 hover:text-stone-900 text-2xl font-light"
             >
-              ✕
+              ×
             </button>
           </div>
 
@@ -170,36 +183,36 @@ function CommentsSection({
   handleAddComment: () => void;
 }) {
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex flex-col h-full lg:h-[calc(100vh-8rem)] bg-[#fefdfb] border border-stone-200 rounded-2xl overflow-hidden">
       {/* AI Summary */}
       {commentsSummary && (
-        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mx-4 mt-4 rounded">
-          <h3 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
-            <span>🤖</span> AI Summary
+        <div className="bg-amber-50/50 border-b border-stone-200 p-6">
+          <h3 className="font-light text-stone-900 mb-3 flex items-center gap-2 text-sm tracking-wide">
+            <span>✨</span> AI SUMMARY
           </h3>
-          <p className="text-blue-800 text-sm">{commentsSummary}</p>
+          <p className="text-stone-700 text-sm font-light leading-relaxed">{commentsSummary}</p>
         </div>
       )}
 
       {/* Comments List */}
-      <div className="flex-1 overflow-y-auto px-4 py-4">
+      <div className="flex-1 overflow-y-auto px-6 py-6">
         <div className="space-y-4">
           {comments.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">
+            <p className="text-stone-500 text-center py-12 font-light">
               No comments yet. Be the first to comment!
             </p>
           ) : (
             comments.map((comment) => (
-              <div key={comment.id} className="bg-gray-50 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="font-semibold text-gray-900">
+              <div key={comment.id} className="bg-stone-50/50 rounded-xl p-5 border border-stone-100">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="font-light text-stone-900">
                     {comment.author}
                   </span>
-                  <span className="text-xs text-gray-500">
-                    {new Date(comment.createdAt).toLocaleDateString()}
+                  <span className="text-xs text-stone-500 font-light">
+                    {new Date(comment.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </span>
                 </div>
-                <p className="text-gray-700">{comment.content}</p>
+                <p className="text-stone-700 font-light leading-relaxed">{comment.content}</p>
               </div>
             ))
           )}
@@ -207,26 +220,26 @@ function CommentsSection({
       </div>
 
       {/* Add Comment Form */}
-      <div className="border-t bg-white p-4">
+      <div className="border-t border-stone-200 bg-[#fefdfb] p-6">
         <div className="space-y-3">
           <input
             type="text"
             placeholder="Your name"
             value={authorName}
             onChange={(e) => setAuthorName(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-300 focus:border-transparent font-light text-stone-900 placeholder:text-stone-400"
           />
           <textarea
             placeholder="Add a comment..."
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             rows={3}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-300 focus:border-transparent resize-none font-light text-stone-900 placeholder:text-stone-400"
           />
           <button
             onClick={handleAddComment}
             disabled={!newComment.trim() || !authorName.trim()}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+            className="w-full bg-stone-800 text-stone-50 py-3 rounded-xl font-light hover:bg-stone-700 transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed"
           >
             Post Comment
           </button>
