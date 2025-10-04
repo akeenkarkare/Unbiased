@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { mockArticles } from "@/lib/data";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 function getBiasColor(bias: number) {
   if (bias < 20) return "text-emerald-700";
@@ -18,12 +19,16 @@ function getBiasBgColor(bias: number) {
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
 
-  const filteredArticles = mockArticles
-    .filter(article =>
-      article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      article.summary.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const featuredArticles = mockArticles
     .sort((a, b) => (b.engagementScore || 0) - (a.engagementScore || 0))
     .slice(0, 25);
 
@@ -36,18 +41,23 @@ export default function Home() {
           <p className="text-stone-500 mt-1 text-sm font-light">Three angles. One clear view.</p>
           
           <div className="mt-6">
-            <div className="relative max-w-md">
+            <form onSubmit={handleSearch} className="relative max-w-md">
               <input
                 type="text"
-                placeholder="Search stories..."
+                placeholder="Search news with AI..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full px-4 py-3 bg-white border border-stone-200 rounded-xl font-light text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-300 focus:border-transparent"
               />
-              <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
+              <button
+                type="submit"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-stone-400 hover:text-stone-600 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+            </form>
           </div>
         </div>
       </header>
@@ -59,7 +69,7 @@ export default function Home() {
         </div>
         
         <div className="space-y-6">
-          {filteredArticles.map((article) => (
+          {featuredArticles.map((article) => (
             <Link
               key={article.id}
               href={`/article/${article.id}`}
