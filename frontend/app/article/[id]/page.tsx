@@ -3,18 +3,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { mockArticles, mockComments, mockCommentsSummary } from "@/lib/data";
-
-function getBiasColor(bias: number) {
-  if (bias < 20) return "text-emerald-700";
-  if (bias < 40) return "text-amber-700";
-  return "text-rose-700";
-}
-
-function getBiasBgColor(bias: number) {
-  if (bias < 20) return "bg-emerald-50";
-  if (bias < 40) return "bg-amber-50";
-  return "bg-rose-50";
-}
+import BiasGauge from "@/components/BiasGauge";
 
 export default function ArticlePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -87,11 +76,8 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
                   <h1 className="text-4xl font-light text-stone-900 leading-tight flex-1">
                     {article.title}
                   </h1>
-                  <div className={`${getBiasBgColor(article.biasPercentage)} rounded-xl px-6 py-4 text-center border border-stone-200 flex-shrink-0`}>
-                    <div className={`text-3xl font-light ${getBiasColor(article.biasPercentage)}`}>
-                      {article.biasPercentage}%
-                    </div>
-                    <div className="text-xs text-stone-600 mt-1 font-light tracking-wide">BIAS</div>
+                  <div className="flex-shrink-0">
+                    <BiasGauge bias={article.biasPercentage} size="large" />
                   </div>
                 </div>
 
@@ -103,8 +89,9 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
               </div>
 
               <div className="prose prose-stone max-w-none">
-                <p className="text-lg text-stone-700 leading-relaxed font-light">
-                  {article.content}
+                <p className="text-lg text-stone-500 leading-relaxed font-light">
+                  <span className="text-stone-400 text-sm tracking-wide mr-2">UNBIASED</span>
+                  {article.unbiasedContent}
                 </p>
               </div>
 
