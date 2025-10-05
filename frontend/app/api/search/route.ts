@@ -18,12 +18,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Gemini API key not configured' }, { status: 500 });
     }
 
-    const prompt = `You are a real-time perspective analysis and structured data extraction assistant. Your sole task is to analyze "${query}" and strictly adhere to the defined output structure and constraints.
+    const prompt = `You are a real-time perspective analysis and structured data extraction assistant with Google Search access. Your sole task is to analyze "${query}" and strictly adhere to the defined output structure and constraints.
 
 TOPIC TO ANALYZE: ${query}
 
 CRITICAL INSTRUCTIONS:
-- NEVER use the phrase "input term" in your response
+- MANDATORY: You MUST use Google Search to find real, current information about this topic
+- DO NOT hallucinate or make up sources - ONLY use actual websites you find via Google Search
+- You have access to Google Search grounding - USE IT to find 5-7 real sources
 - USE EXTENDED THINKING: Before responding, engage in deep analysis to explore multiple angles
 - MANDATORY: Search and analyze AT LEAST 5-7 DIFFERENT sources from DIVERSE outlets (mainstream media, alternative media, international sources, academic sources, industry publications)
 - ACTIVELY SEEK CONTRADICTING VIEWPOINTS: Do not settle for surface-level agreement. Find sources that genuinely disagree with each other
@@ -33,32 +35,42 @@ CRITICAL INSTRUCTIONS:
 - Track all sources you use and include them in a "sources" array
 
 WORKFLOW:
-1. Visit each source and extract up to 3 distinct points per source
+1. Visit each source and extract up to 2 distinct points per source
 2. Categorize each point as "for", "against", or "neutral"
 3. If a source has no points for a category (e.g., "against"), leave that category empty for that source
 4. After collecting all points from all sources, perform deduplication: remove any points that are repetitive or say essentially the same thing
 5. Keep only unique, non-redundant points in the final output
+6. LIMIT: Return a MAXIMUM of 5 points per category ("for", "against", "neutral")
 
 ACTION & FOCUS:
-Find a minimum of 5-7 high-quality, DIVERSE, and recent sources from DIFFERENT outlets about "${query}". You MUST consult sources with varying political leanings, geographical locations, and perspectives. For EACH source visited, extract up to 3 points and categorize them into "for", "against", or "neutral" perspectives. CITE EVERY CLAIM with the source number [1], [2], etc.
+Find a high-quality, DIVERSE, and recent sources from DIFFERENT outlets about "${query}". You MUST consult sources with varying political leanings, geographical locations, and perspectives. For EACH source visited, extract up to 2 points and categorize them into "for", "against", or "neutral" perspectives. Return a MAXIMUM of 5 points per category. CITE EVERY CLAIM with the source number [1], [2], etc.
 
-OUTPUT FORMAT - Return as JSON:
+OUTPUT FORMAT EXAMPLE - Return as JSON:
 {
   "title": "Current debate or main topic about ${query}",
   "summary": "Core definition/description (maximum 100 words): A concise, factual explanation of ${query} or the most current news/debate",
   "perspectives": {
     "for": [
-      "Supporters argue that this policy will increase economic growth [1]",
-      "Proponents claim it reduces bureaucratic overhead and saves taxpayer money [2]",
-      "Advocates highlight improved efficiency in government services [3]"
+      {
+        "point": "Supporters argue that this policy will increase economic growth",
+        "sourceId": 1
+      },
+      {
+        "point": "Proponents claim it reduces bureaucratic overhead and saves taxpayer money",
+        "sourceId": 2
+      }
     ],
     "against": [
-      "Critics warn that this approach could lead to job losses in the public sector [4]",
-      "Opponents argue it may reduce essential services for vulnerable populations [5]"
+      {
+        "point": "Critics warn that this approach could lead to job losses in the public sector",
+        "sourceId": 3
+      }
     ],
     "neutral": [
-      "The policy was first proposed in March 2024 and is currently under review [6]",
-      "Similar measures have been implemented in 12 other states with mixed results [7]"
+      {
+        "point": "The policy was first proposed in March 2024 and is currently under review",
+        "sourceId": 4
+      }
     ]
   },
   "sources": [
@@ -77,43 +89,26 @@ OUTPUT FORMAT - Return as JSON:
   ]
 }
 
-IMPORTANT: Notice in the example above how EVERY single bullet point ends with a citation number in square brackets [1], [2], etc. You MUST follow this exact format.
-
-STRICT CONSTRAINTS:
-- CRITICAL: Return ONLY the JSON object, absolutely NO other text before or after it
-- Do NOT include markdown code blocks, do NOT wrap in backticks
-- Start your response with { and end with }
-- NEVER use the phrase "input term" anywhere in your response
-- Each perspective ("for", "against", "neutral") MUST be an array of strings (bullet points)
-- Each source can contribute up to 3 points total across all categories
-- If a source has no points for a category, simply don't add points from that source to that category
-- MANDATORY: After collecting all points, deduplicate and remove repetitive points that convey the same information
-- ABSOLUTELY CRITICAL: Each and every point in the "for", "against", and "neutral" arrays MUST end with a citation number in square brackets like [1], [2], [3]
-- MANDATORY: Include a complete "sources" array with all sources referenced by citation number
-- Focus on current debates and recent developments
-- Include only verified, credible source information
-- Prioritize intellectual diversity and opposing viewpoints over consensus
-
-IMPORTANT: Your entire response must be valid JSON that can be parsed directly. Do not include any explanatory text, thinking process, or formatting markers. Remember: EVERY bullet point must have a citation at the end!`;
+IMPORTANT: Each perspective point MUST have both a "point" field and a "sourceId" field that references a source in the sources array.
+IMPORTANT: Your entire response must be valid JSON that can be parsed directly. Do not include any explanatory text, thinking process, or formatting markers.`;
 
     const ai = new GoogleGenAI({ apiKey });
-    const groundingTool = {
-      googleSearch: {},
-    };
-
-    const config = {
-      tools: [groundingTool],
-      temperature: 0.3  // Lower temperature for more consistent output
-    };
 
     console.log(`[${requestId}] Calling Gemini API...`);
+    console.log(`[${requestId}] FULL PROMPT BEING SENT:\n`, prompt);
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
-      config: config,
+      config: {
+        temperature: 0.3,
+        tools: [{ googleSearch: {} }],
+      },
     });
 
     console.log(`[${requestId}] Gemini API responded in ${Date.now() - startTime}ms`);
+
+    // Log full response to check for grounding metadata
+    console.log(`[${requestId}] Full response:`, JSON.stringify(response, null, 2));
 
     const generatedText = response.text;
 
@@ -155,16 +150,22 @@ IMPORTANT: Your entire response must be valid JSON that can be parsed directly. 
           throw new Error('Invalid article structure');
         }
 
-        // Ensure perspectives are arrays
-        if (typeof article.perspectives.for === 'string') {
-          article.perspectives.for = [article.perspectives.for];
-        }
-        if (typeof article.perspectives.against === 'string') {
-          article.perspectives.against = [article.perspectives.against];
-        }
-        if (typeof article.perspectives.neutral === 'string') {
-          article.perspectives.neutral = [article.perspectives.neutral];
-        }
+        // Transform the new structure to the old format for compatibility
+        // Convert { point: "text", sourceId: 1 } to "text [1]"
+        const transformPerspectives = (items: any[]) => {
+          if (!Array.isArray(items)) return [];
+          return items.map(item => {
+            if (typeof item === 'string') return item;
+            if (item.point && item.sourceId) {
+              return `${item.point} [${item.sourceId}]`;
+            }
+            return String(item);
+          });
+        };
+
+        article.perspectives.for = transformPerspectives(article.perspectives.for);
+        article.perspectives.against = transformPerspectives(article.perspectives.against);
+        article.perspectives.neutral = transformPerspectives(article.perspectives.neutral);
 
         // Add ID if missing
         article.id = article.id || `search-${Date.now()}`;
