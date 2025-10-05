@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server';
 import { needsRefresh, deactivateOldArticles, insertArticles } from '@/lib/supabaseHelpers';
 import { GoogleGenAI } from '@google/genai';
+import { generateAndUploadAudio } from '@/lib/audioHelpers';
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    // Check for force parameter
+    const url = new URL(request.url);
+    const force = url.searchParams.get('force') === 'true';
+
     // Check if refresh is needed
-    const shouldRefresh = await needsRefresh();
+    const shouldRefresh = force || await needsRefresh();
 
     if (!shouldRefresh) {
       return NextResponse.json({
@@ -56,7 +61,7 @@ Return ONLY valid JSON array (no markdown, no code blocks):
 Focus on diverse topics: politics, technology, business, science, environment, health, culture, international affairs. Ensure perspectives are balanced and based on real reporting.`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-pro",
+      model: "gemini-2.0-flash-exp",
       contents: prompt,
       config: config,
     });
@@ -88,26 +93,50 @@ Focus on diverse topics: politics, technology, business, science, environment, h
     // Deactivate old articles
     await deactivateOldArticles();
 
+    // Generate audio URLs for each article BEFORE inserting
     if (newArticles.length > 0) {
-      await insertArticles(newArticles);
+      console.log('Generating audio for articles sequentially...');
+
+      // Generate audio for articles one at a time (ElevenLabs free tier: max 5 concurrent)
+      const articlesWithAudio = [];
+      for (const article of newArticles) {
+        const audioText = `${article.title}. ${article.content}`;
+
+        // Generate a temporary ID for audio file naming
+        const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const audioUrl = await generateAndUploadAudio(tempId, audioText);
+
+        console.log(`Audio generated for article: ${article.title.substring(0, 50)}...`);
+
+        articlesWithAudio.push({
+          ...article,
+          audio_url: audioUrl
+        });
+      }
+
+      // Now insert articles with audio URLs
+      await insertArticles(articlesWithAudio);
+      console.log('Articles inserted with audio URLs');
     }
 
     return NextResponse.json({
-      message: 'Articles refreshed successfully',
+      message: 'Articles refreshed successfully with audio',
       refreshed: true,
       count: newArticles.length
     });
 
   } catch (error) {
     console.error('Error refreshing articles:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error details:', errorMessage);
     return NextResponse.json(
-      { error: 'Failed to refresh articles' },
+      { error: 'Failed to refresh articles', details: errorMessage },
       { status: 500 }
     );
   }
 }
 
 // Allow GET to trigger refresh manually
-export async function GET() {
-  return POST();
+export async function GET(request: Request) {
+  return POST(request);
 }

@@ -11,6 +11,7 @@ export function dbArticleToArticle(dbArticle: DBArticle): Article {
     source: dbArticle.source,
     publishedAt: dbArticle.published_at,
     engagementScore: dbArticle.engagement_score,
+    audioUrl: dbArticle.audio_url,
     perspectives: {
       for: dbArticle.perspective_for,
       against: dbArticle.perspective_against,
@@ -71,15 +72,18 @@ export async function deactivateOldArticles(): Promise<void> {
 }
 
 // Insert new articles
-export async function insertArticles(articles: Omit<DBArticle, 'id' | 'created_at' | 'updated_at'>[]): Promise<void> {
-  const { error } = await supabase
+export async function insertArticles(articles: Omit<DBArticle, 'id' | 'created_at' | 'updated_at'>[]): Promise<DBArticle[]> {
+  const { data, error } = await supabase
     .from('articles')
-    .insert(articles);
+    .insert(articles)
+    .select();
 
   if (error) {
     console.error('Error inserting articles:', error);
     throw error;
   }
+
+  return data || [];
 }
 
 // Get comments for an article
