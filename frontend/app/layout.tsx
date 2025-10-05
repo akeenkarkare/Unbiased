@@ -16,7 +16,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "Unbiased",
-  description: "All sides. Your judgment.",
+  description: "See every side. Think for yourself.",
   icons: {
     icon: [
       {
