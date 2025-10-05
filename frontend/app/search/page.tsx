@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, ReactElement } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -114,7 +114,7 @@ function SearchResults() {
     if (!text) return null;
 
     // Find all citations in format [1], [2], etc. or [1](url), [2](url)
-    const parts: (string | JSX.Element)[] = [];
+    const parts: (string | ReactElement)[] = [];
     let lastIndex = 0;
 
     // Match both [1] and [1](url) formats

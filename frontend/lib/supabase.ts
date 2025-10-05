@@ -23,6 +23,7 @@ export interface DBArticle {
   source: string;
   published_at: string;
   engagement_score: number;
+  audio_url?: string;
   perspective_for: string;
   perspective_against: string;
   perspective_neutral: string;

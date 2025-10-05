@@ -6,6 +6,7 @@ export interface Article {
   publishedAt: string;
   source: string;
   engagementScore?: number;
+  audioUrl?: string;
   perspectives?: {
     for: string;
     against: string;
