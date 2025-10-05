@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense, ReactElement } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 interface Source {
@@ -25,12 +25,19 @@ interface Article {
 
 function SearchResults() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const query = searchParams.get('q') || '';
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [searchInput, setSearchInput] = useState(query);
+
+  // Update search input when query changes
+  useEffect(() => {
+    setSearchInput(query);
+  }, [query]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -182,20 +189,17 @@ function SearchResults() {
           </div>
 
           <div className="mt-6">
-            <form onSubmit={(e) => { e.preventDefault(); if (query) window.location.href = `/search?q=${encodeURIComponent(query)}`; }} className="relative max-w-2xl">
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (searchInput.trim()) {
+                router.push(`/search?q=${encodeURIComponent(searchInput.trim())}`);
+              }
+            }} className="relative max-w-2xl">
               <input
                 type="text"
                 placeholder="Search news with AI..."
-                defaultValue={query}
-                onChange={(e) => {
-                  const newQuery = e.target.value;
-                  if (newQuery && newQuery !== query) {
-                    const timer = setTimeout(() => {
-                      window.location.href = `/search?q=${encodeURIComponent(newQuery)}`;
-                    }, 1000);
-                    return () => clearTimeout(timer);
-                  }
-                }}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 className="w-full px-6 py-4 bg-white border-4 border-black font-bold text-black placeholder-stone-500 focus:outline-none neo-shadow"
               />
               <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-black">
