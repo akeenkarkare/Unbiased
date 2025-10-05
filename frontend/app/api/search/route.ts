@@ -94,16 +94,23 @@ IMPORTANT: Your entire response must be valid JSON that can be parsed directly. 
 
     const ai = new GoogleGenAI({ apiKey });
 
+    const groundingTool = {
+      googleSearch: {},
+    };
+
     console.log(`[${requestId}] Calling Gemini API...`);
     console.log(`[${requestId}] FULL PROMPT BEING SENT:\n`, prompt);
 
     // NOTE: Google Search grounding requires PAID API tier ($35 per 1000 queries)
     // Your API key doesn't have grounding enabled - you need to upgrade at aistudio.google.com
+
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
         temperature: 0.3,
+        tools: [groundingTool],
+        maxOutputTokens: 8192, // Limit response size for faster generation
       },
     });
 
@@ -112,7 +119,81 @@ IMPORTANT: Your entire response must be valid JSON that can be parsed directly. 
     // Log full response to check for grounding metadata
     console.log(`[${requestId}] Full response:`, JSON.stringify(response, null, 2));
 
-    const generatedText = response.text;
+    // Extract sources from grounding metadata
+    function extractSourcesFromGrounding(response: any) {
+      const sources: any[] = [];
+
+      try {
+        const candidate = response.candidates?.[0];
+        const metadata = candidate?.groundingMetadata;
+
+        if (metadata?.groundingChunks) {
+          metadata.groundingChunks.forEach((chunk: any, idx: number) => {
+            if (chunk?.web?.uri) {
+              sources.push({
+                id: idx + 1,
+                name: chunk.web.title || chunk.web.uri.split('/')[2] || 'Source',
+                url: chunk.web.uri,
+                publishedAt: null
+              });
+            }
+          });
+        }
+      } catch (e) {
+        console.warn(`[${requestId}] Could not extract sources from grounding:`, e);
+      }
+
+      return sources;
+    }
+
+    // Add inline citations to text
+    function addCitations(text: string, response: any): string {
+      try {
+        const candidate = response.candidates?.[0];
+        const supports = candidate?.groundingMetadata?.groundingSupports;
+        const chunks = candidate?.groundingMetadata?.groundingChunks;
+
+        if (!supports || !chunks) {
+          return text;
+        }
+
+        // Sort supports by end_index in descending order
+        const sortedSupports = [...supports].sort(
+          (a: any, b: any) => (b.segment?.endIndex ?? 0) - (a.segment?.endIndex ?? 0)
+        );
+
+        for (const support of sortedSupports) {
+          const endIndex = support.segment?.endIndex;
+          if (endIndex === undefined || !support.groundingChunkIndices?.length) {
+            continue;
+          }
+
+          const citationLinks = support.groundingChunkIndices
+            .map((i: number) => {
+              const uri = chunks[i]?.web?.uri;
+              if (uri) {
+                return `[${i + 1}](${uri})`;
+              }
+              return null;
+            })
+            .filter(Boolean);
+
+          if (citationLinks.length > 0) {
+            const citationString = citationLinks.join(', ');
+            text = text.slice(0, endIndex) + citationString + text.slice(endIndex);
+          }
+        }
+      } catch (e) {
+        console.warn(`[${requestId}] Could not add citations:`, e);
+      }
+
+      return text;
+    }
+
+    const extractedSources = extractSourcesFromGrounding(response);
+    const generatedText = addCitations(response.text || '', response);
+
+    console.log(`[${requestId}] Extracted ${extractedSources.length} sources from grounding metadata`);
 
     if (!generatedText) {
       console.error(`[${requestId}] No text in Gemini response`);
@@ -172,8 +253,9 @@ IMPORTANT: Your entire response must be valid JSON that can be parsed directly. 
         // Add ID if missing
         article.id = article.id || `search-${Date.now()}`;
 
-        // Ensure sources array exists
-        article.sources = article.sources || [];
+        // Merge sources from grounding metadata with sources from JSON response
+        const jsonSources = article.sources || [];
+        article.sources = extractedSources.length > 0 ? extractedSources : jsonSources;
 
         console.log(`[${requestId}] Successfully parsed article. Sources count:`, article.sources?.length || 0);
         console.log(`[${requestId}] Perspectives: for=${article.perspectives.for.length}, against=${article.perspectives.against.length}, neutral=${article.perspectives.neutral.length}`);

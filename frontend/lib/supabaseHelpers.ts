@@ -27,7 +27,6 @@ export async function getActiveArticles(): Promise<Article[]> {
   const { data, error } = await supabase
     .from('articles')
     .select('*')
-    .eq('is_active', true)
     .gte('created_at', sixHoursAgo)
     .order('engagement_score', { ascending: false })
     .limit(10);
@@ -40,14 +39,13 @@ export async function getActiveArticles(): Promise<Article[]> {
   return (data as DBArticle[]).map(dbArticleToArticle);
 }
 
-// Check if we need to refresh articles (older than 6 hours or no active articles)
+// Check if we need to refresh articles (older than 6 hours or no articles)
 export async function needsRefresh(): Promise<boolean> {
   const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
 
   const { data, error } = await supabase
     .from('articles')
     .select('id')
-    .eq('is_active', true)
     .gte('created_at', sixHoursAgo)
     .limit(1);
 
@@ -59,15 +57,15 @@ export async function needsRefresh(): Promise<boolean> {
   return !data || data.length === 0;
 }
 
-// Deactivate old articles
-export async function deactivateOldArticles(): Promise<void> {
+// Delete old articles
+export async function deleteOldArticles(): Promise<void> {
   const { error } = await supabase
     .from('articles')
-    .update({ is_active: false })
-    .eq('is_active', true);
+    .delete()
+    .neq('id', '00000000-0000-0000-0000-000000000000');
 
   if (error) {
-    console.error('Error deactivating old articles:', error);
+    console.error('Error deleting old articles:', error);
   }
 }
 

@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📰 Unbiased
 
-## Getting Started
+_All sides. Your judgment._  
+Three angles. One clear view.  
 
-First, run the development server:
+Unbiased is a topic-driven **news shorts web app** that presents multiple perspectives on trending issues.  
+Instead of being swayed by one-sided reporting, readers see three concise takes side by side:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- ✅ **For** – Arguments in favor of the topic  
+- ❌ **Against** – Counterarguments and criticism  
+- ⚖️ **Context / Neutral** – Verified background, facts, and middle-ground insights  
+
+Each summary links back to the **original sources** so readers can verify claims directly.  
+Text is also converted into natural-sounding **audio** using ElevenLabs for accessibility and multitasking.
+
+---
+
+## ✨ Features
+
+- 🔍 **Multi-perspective summaries** (For / Against / Context)  
+- 📚 **Inline citations & source links** for verification  
+- 🎙 **Text-to-Speech integration** (via ElevenLabs)  
+- 🤖 **AI-powered article generation** (Google Gemini + Search Grounding)  
+- 🗄 **Supabase Database & Storage** for articles and cached audio  
+- ⏱ **Scheduled tasks** (Python backend) to refresh daily stories  
+
+---
+
+## 🏗 Tech Stack
+
+### Frontend
+- [Next.js 13+](https://nextjs.org/) with TypeScript  
+- [TailwindCSS](https://tailwindcss.com/) for styling  
+
+### Backend
+- [FastAPI / Python](https://fastapi.tiangolo.com/) for scheduled tasks & API calls  
+- [Supabase](https://supabase.com/) (Postgres + Storage)  
+
+### External APIs
+- [Google Gemini](https://deepmind.google/technologies/gemini/) – AI summarization  
+- Google Search Grounding – factual grounding & citations  
+- [ElevenLabs](https://elevenlabs.io/) – Text-to-Speech  
+
+---
+
+## 🔄 System Architecture
+
+
+```mermaid
+%% Mermaid must be fenced like this for GitHub to render it
+flowchart LR
+
+  subgraph User
+    U[User Browser]
+  end
+
+  subgraph Frontend [Next.js Frontend]
+    FE[UI Components] -->|API Calls| API[API Routes]
+  end
+
+  subgraph Backend [Python FastAPI + Scheduler]
+    TASKS[Scheduled Tasks]
+  end
+
+  subgraph DB [Supabase]
+    DB1[(Postgres DB)]
+    DB2[(Storage - Audio Files)]
+  end
+
+  subgraph External [External APIs]
+    GEM[Google Gemini]
+    SRCH[Google Search Grounding]
+    TTS[ElevenLabs TTS]
+  end
+
+  U --> FE
+  API --> DB1
+  API --> GEM
+  GEM --> SRCH
+  API --> TTS
+  TASKS --> API
+  TTS --> DB2
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

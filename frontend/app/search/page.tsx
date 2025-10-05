@@ -88,6 +88,62 @@ function SearchResults() {
     };
   }, [query]); // Only depend on query
 
+  // Function to render text with clickable citation links
+  const renderTextWithCitations = (text: string, sources: Source[] = []) => {
+    if (!text) return null;
+
+    // Find all citations in format [1], [2], etc. or [1](url), [2](url)
+    const parts: (string | JSX.Element)[] = [];
+    let lastIndex = 0;
+
+    // Match both [1] and [1](url) formats
+    const citationRegex = /\[(\d+)\](?:\(([^)]+)\))?/g;
+    let match;
+
+    while ((match = citationRegex.exec(text)) !== null) {
+      const fullMatch = match[0];
+      const citationNumber = parseInt(match[1]);
+      const url = match[2]; // URL from [1](url) format if present
+      const matchIndex = match.index;
+
+      // Add text before citation
+      if (matchIndex > lastIndex) {
+        parts.push(text.substring(lastIndex, matchIndex));
+      }
+
+      // Find the source for this citation
+      const source = sources.find(s => s.id === citationNumber);
+      const sourceUrl = url || source?.url;
+
+      if (sourceUrl) {
+        // Add clickable citation
+        parts.push(
+          <a
+            key={`citation-${matchIndex}`}
+            href={sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:text-blue-800 underline font-medium"
+          >
+            [{citationNumber}]
+          </a>
+        );
+      } else {
+        // No URL found, render as plain text
+        parts.push(`[${citationNumber}]`);
+      }
+
+      lastIndex = matchIndex + fullMatch.length;
+    }
+
+    // Add remaining text after last citation
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+
+    return parts.length > 0 ? <>{parts}</> : text;
+  };
+
   return (
     <div className="min-h-screen bg-[#fafaf9]">
       <header className="bg-[#f5f4f0] border-b border-stone-200">
@@ -144,10 +200,10 @@ function SearchResults() {
               <div className="flex items-start justify-between gap-8">
                 <div className="flex-1 space-y-5">
                   <h2 className="text-3xl font-light text-stone-900 leading-tight">
-                    {article.title}
+                    {renderTextWithCitations(article.title, article.sources)}
                   </h2>
                   <p className="text-stone-600 text-lg font-light leading-relaxed">
-                    {article.summary}
+                    {renderTextWithCitations(article.summary, article.sources)}
                   </p>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6 pt-6 border-t border-stone-150">
@@ -156,7 +212,7 @@ function SearchResults() {
                       {article.perspectives.for.length > 0 ? (
                         <ul className="space-y-2 list-disc list-inside text-sm text-stone-700 font-light leading-relaxed">
                           {article.perspectives.for.map((point, idx) => (
-                            <li key={idx} className="pl-1">{point}</li>
+                            <li key={idx} className="pl-1">{renderTextWithCitations(point, article.sources)}</li>
                           ))}
                         </ul>
                       ) : (
@@ -168,7 +224,7 @@ function SearchResults() {
                       {article.perspectives.neutral.length > 0 ? (
                         <ul className="space-y-2 list-disc list-inside text-sm text-stone-700 font-light leading-relaxed">
                           {article.perspectives.neutral.map((point, idx) => (
-                            <li key={idx} className="pl-1">{point}</li>
+                            <li key={idx} className="pl-1">{renderTextWithCitations(point, article.sources)}</li>
                           ))}
                         </ul>
                       ) : (
@@ -180,7 +236,7 @@ function SearchResults() {
                       {article.perspectives.against.length > 0 ? (
                         <ul className="space-y-2 list-disc list-inside text-sm text-stone-700 font-light leading-relaxed">
                           {article.perspectives.against.map((point, idx) => (
-                            <li key={idx} className="pl-1">{point}</li>
+                            <li key={idx} className="pl-1">{renderTextWithCitations(point, article.sources)}</li>
                           ))}
                         </ul>
                       ) : (
@@ -188,32 +244,6 @@ function SearchResults() {
                       )}
                     </div>
                   </div>
-
-                  {article.sources && article.sources.length > 0 && (
-                    <div className="mt-8 pt-6 border-t border-stone-200">
-                      <h3 className="text-lg font-light text-stone-900 mb-4">Sources</h3>
-                      <ul className="space-y-2">
-                        {article.sources.map((source) => (
-                          <li key={source.id} className="text-sm text-stone-600 font-light">
-                            <span className="font-medium text-stone-700">[{source.id}]</span>{' '}
-                            <a
-                              href={source.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="hover:text-stone-900 underline"
-                            >
-                              {source.name}
-                            </a>
-                            {source.publishedAt && (
-                              <span className="text-stone-500 ml-2">
-                                ({new Date(source.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })})
-                              </span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
