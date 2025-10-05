@@ -87,8 +87,8 @@ export default function Home() {
             <img src="/Overlapping Speech Bubbles in Vibrant Tones.png" alt="Unbiased Logo" className="w-16 h-16 border-4 border-black neo-shadow-sm" />
             <h1 className="text-6xl font-black tracking-tighter text-black uppercase transform -rotate-1">Unbiased</h1>
           </div>
-          <p className="text-black mt-3 font-bold text-xl">All sides. Your judgment.</p>
-          <p className="text-black mt-1 text-lg font-bold">Three angles. One clear view.</p>
+          <p className="text-black mt-3 font-bold text-xl">See every side.</p>
+          <p className="text-black mt-1 text-lg font-bold">Think for yourself.</p>
 
           <div className="mt-8">
             <form onSubmit={handleSearch} className="relative max-w-xl">
