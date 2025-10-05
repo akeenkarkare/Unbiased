@@ -60,11 +60,11 @@ function SearchResults() {
   return (
     <div className="min-h-screen bg-[#fafaf9]">
       <header className="bg-[#f5f4f0] border-b border-stone-200">
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          <Link href="/" className="text-4xl font-light tracking-tight text-stone-900 hover:text-stone-700">
-            Unbiased
+        <div className="max-w-6xl mx-auto px-6 py-10">
+          <Link href="/" className="text-5xl font-light tracking-tight text-stone-900 hover:text-stone-700 transition-colors">
+            Unbiased.
           </Link>
-          <p className="text-stone-600 mt-2 font-light">Search results for "{query}"</p>
+          <p className="text-stone-600 mt-3 font-light text-lg">Search results for "{query}"</p>
         </div>
       </header>
 
@@ -112,17 +112,17 @@ function SearchResults() {
             {articles.map((article) => (
               <div
                 key={article.id}
-                className="block bg-[#fefdfb] border border-stone-200 rounded-2xl p-8"
+                className="block bg-[#fefdfb] border border-stone-200 rounded-3xl p-10 shadow-sm hover:shadow-md transition-shadow"
               >
                 <div className="flex items-start justify-between gap-8">
-                  <div className="flex-1 space-y-4">
-                    <h2 className="text-2xl font-light text-stone-900 leading-snug">
+                  <div className="flex-1 space-y-5">
+                    <h2 className="text-3xl font-light text-stone-900 leading-tight">
                       {article.title}
                     </h2>
-                    <p className="text-stone-600 text-base font-light leading-relaxed">
+                    <p className="text-stone-600 text-lg font-light leading-relaxed">
                       {article.summary}
                     </p>
-                    
+
                     {article.perspectives && (
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-stone-100">
                         <div className="space-y-2">
@@ -139,10 +139,10 @@ function SearchResults() {
                         </div>
                       </div>
                     )}
-                    
-                    <div className="flex items-center gap-4 text-sm text-stone-500 font-light pt-2">
-                      <span className="text-stone-700">{article.source}</span>
-                      <span className="w-1 h-1 rounded-full bg-stone-300"></span>
+
+                    <div className="flex items-center gap-4 text-sm text-stone-500 font-light pt-3">
+                      <span className="text-stone-700 font-medium">{article.source}</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-stone-300"></span>
                       <span>{new Date(article.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                     </div>
                   </div>
