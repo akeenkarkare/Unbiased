@@ -71,7 +71,10 @@ export default function Home() {
     <div className="min-h-screen bg-yellow-100">
       <header className="bg-purple-400 border-b-4 border-black">
         <div className="max-w-6xl mx-auto px-6 py-10">
-          <h1 className="text-6xl font-black tracking-tighter text-black uppercase transform -rotate-1">Unbiased</h1>
+          <div className="flex items-center gap-4 mb-3">
+            <img src="/Overlapping Speech Bubbles in Vibrant Tones.png" alt="Unbiased Logo" className="w-16 h-16 border-4 border-black neo-shadow-sm" />
+            <h1 className="text-6xl font-black tracking-tighter text-black uppercase transform -rotate-1">Unbiased</h1>
+          </div>
           <p className="text-black mt-3 font-bold text-xl">All sides. Your judgment.</p>
           <p className="text-black mt-1 text-lg font-bold">Three angles. One clear view.</p>
 
