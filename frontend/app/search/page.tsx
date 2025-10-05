@@ -126,16 +126,16 @@ function SearchResults() {
                     {article.perspectives && (
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-stone-100">
                         <div className="space-y-2">
-                          <h4 className="text-xs font-medium text-emerald-700 uppercase tracking-wide">For</h4>
+                          <h4 className="text-xs font-medium text-rose-700 uppercase tracking-wide">For</h4>
                           <p className="text-sm text-stone-600 font-light leading-relaxed">{article.perspectives.for}</p>
                         </div>
                         <div className="space-y-2">
-                          <h4 className="text-xs font-medium text-rose-700 uppercase tracking-wide">Against</h4>
-                          <p className="text-sm text-stone-600 font-light leading-relaxed">{article.perspectives.against}</p>
+                          <h4 className="text-xs font-medium text-amber-700 uppercase tracking-wide">Unbiased</h4>
+                          <p className="text-sm text-stone-600 font-light leading-relaxed">{article.perspectives.neutral}</p>
                         </div>
                         <div className="space-y-2">
-                          <h4 className="text-xs font-medium text-amber-700 uppercase tracking-wide">Context</h4>
-                          <p className="text-sm text-stone-600 font-light leading-relaxed">{article.perspectives.neutral}</p>
+                          <h4 className="text-xs font-medium text-emerald-700 uppercase tracking-wide">Against</h4>
+                          <p className="text-sm text-stone-600 font-light leading-relaxed">{article.perspectives.against}</p>
                         </div>
                       </div>
                     )}

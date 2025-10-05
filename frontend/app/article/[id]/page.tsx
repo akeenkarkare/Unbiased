@@ -1,22 +1,62 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import Link from "next/link";
-import { mockArticles, mockComments, mockCommentsSummary } from "@/lib/data";
+import { mockArticles } from "@/lib/data";
+import { getCommentsForArticle, addComment } from "@/lib/supabaseHelpers";
 
-export default function ArticlePage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams?: { fromSearch?: string } }) {
+export default function ArticlePage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams?: Promise<{ fromSearch?: string }> }) {
   const { id } = use(params);
-  const isFromSearch = searchParams?.fromSearch === 'true';
+  const resolvedSearchParams = searchParams ? use(searchParams) : {};
+  const isFromSearch = resolvedSearchParams.fromSearch === 'true';
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
-  const [comments, setComments] = useState(mockComments[id] || []);
+  const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
   const [authorName, setAuthorName] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [article, setArticle] = useState<any>(null);
 
-  const article = mockArticles.find((a) => a.id === id);
-  const commentsSummary = mockCommentsSummary[id];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch article from API
+        const articleResponse = await fetch(`/api/articles/${id}`);
+        if (articleResponse.ok) {
+          const articleData = await articleResponse.json();
+          setArticle(articleData.article);
+        } else {
+          // Fallback to mock data
+          setArticle(mockArticles.find((a) => a.id === id));
+        }
+
+        // Fetch comments from Supabase
+        if (!isFromSearch) {
+          const commentsData = await getCommentsForArticle(id);
+          setComments(commentsData);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setArticle(mockArticles.find((a) => a.id === id));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id, isFromSearch]);
+
+  const commentsSummary = undefined; // TODO: Generate AI summary
 
   // Only show comments for homepage articles, not search results
   const showComments = !isFromSearch;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#fafaf9]">
+        <div className="text-stone-500 font-light">Loading...</div>
+      </div>
+    );
+  }
 
   if (!article) {
     return (
@@ -31,20 +71,18 @@ export default function ArticlePage({ params, searchParams }: { params: Promise<
     );
   }
 
-  const handleAddComment = () => {
+  const handleAddComment = async () => {
     if (!newComment.trim() || !authorName.trim()) return;
 
-    const comment = {
-      id: `c${Date.now()}`,
-      articleId: id,
-      author: authorName,
-      content: newComment,
-      createdAt: new Date().toISOString(),
-    };
-
-    setComments([...comments, comment]);
-    setNewComment("");
-    setAuthorName("");
+    try {
+      const comment = await addComment(id, authorName, newComment);
+      setComments([...comments, comment]);
+      setNewComment("");
+      setAuthorName("");
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      alert('Failed to add comment. Please try again.');
+    }
   };
 
   const handleSwipe = (e: React.TouchEvent) => {
@@ -201,7 +239,7 @@ function CommentsSection({
                     {comment.author}
                   </span>
                   <span className="text-xs text-stone-500 font-light">
-                    {new Date(comment.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    {new Date(comment.created_at || comment.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </span>
                 </div>
                 <p className="text-stone-700 font-light leading-relaxed">{comment.content}</p>
