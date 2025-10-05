@@ -65,7 +65,19 @@ export default function Home() {
     }
   };
 
-  const sortedArticles = [...articles].sort((a, b) => (b.engagementScore || 0) - (a.engagementScore || 0));
+  // Sort articles by comment count (from commentCounts), fallback to engagement score
+  const sortedArticles = [...articles].sort((a, b) => {
+    const aComments = commentCounts[a.id] || 0;
+    const bComments = commentCounts[b.id] || 0;
+
+    // Primary sort: by comment count (descending)
+    if (bComments !== aComments) {
+      return bComments - aComments;
+    }
+
+    // Secondary sort: by engagement score (descending)
+    return (b.engagementScore || 0) - (a.engagementScore || 0);
+  });
 
   return (
     <div className="min-h-screen bg-yellow-100">
