@@ -8,8 +8,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-space-grotesk);
+  --font-mono: var(--font-jetbrains-mono);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,5 +22,55 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-space-grotesk), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Neobrutalism styles */
+.neo-shadow {
+  box-shadow: 6px 6px 0px #000 !important;
+  transition: all 0.15s ease-out !important;
+}
+
+.neo-shadow-sm {
+  box-shadow: 4px 4px 0px #000 !important;
+  transition: all 0.15s ease-out !important;
+}
+
+.neo-shadow-lg {
+  box-shadow: 8px 8px 0px #000 !important;
+  transition: all 0.15s ease-out !important;
+}
+
+.neo-shadow-purple {
+  box-shadow: 6px 6px 0px #7c3aed !important;
+  transition: all 0.15s ease-out !important;
+}
+
+.neo-shadow-orange {
+  box-shadow: 6px 6px 0px #ea580c !important;
+  transition: all 0.15s ease-out !important;
+}
+
+.neo-shadow-gray {
+  box-shadow: 6px 6px 0px #57534e !important;
+  transition: all 0.15s ease-out !important;
+}
+
+/* Hover state - remove shadows and translate */
+.neo-shadow:hover,
+.neo-shadow-sm:hover,
+.neo-shadow-lg:hover,
+.neo-shadow-purple:hover,
+.neo-shadow-orange:hover,
+.neo-shadow-gray:hover {
+  box-shadow: none !important;
+  transform: translate(6px, 6px) !important;
+}
+
+.neo-shadow-lg:hover {
+  transform: translate(8px, 8px) !important;
+}
+
+.neo-shadow-sm:hover {
+  transform: translate(4px, 4px) !important;
 }

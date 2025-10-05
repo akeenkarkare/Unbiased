@@ -29,6 +29,27 @@ function SearchResults() {
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // Scrolling down
+        setIsHeaderVisible(false);
+      } else {
+        // Scrolling up
+        setIsHeaderVisible(true);
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   useEffect(() => {
     // Use AbortController to prevent race conditions
@@ -89,30 +110,62 @@ function SearchResults() {
   }, [query]); // Only depend on query
 
   return (
-    <div className="min-h-screen bg-[#fafaf9]">
-      <header className="bg-[#f5f4f0] border-b border-stone-200">
-        <div className="max-w-6xl mx-auto px-6 py-10">
-          <Link href="/" className="text-5xl font-light tracking-tight text-stone-900 hover:text-stone-700 transition-colors">
-            Unbiased.
-          </Link>
-          <p className="text-stone-600 mt-3 font-light text-lg">Search results for "{query}"</p>
+    <div className="min-h-screen bg-yellow-100">
+      <header className={`bg-purple-400 border-b-4 border-black sticky top-0 z-50 transition-transform duration-300 ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+        <div className="max-w-6xl mx-auto px-6 py-8">
+          <div className="flex items-center gap-4 mb-4">
+            <Link href="/" className="flex items-center gap-2 bg-orange-300 px-4 py-2 border-4 border-black neo-shadow-sm hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all font-black text-black">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              <span>Back</span>
+            </Link>
+            <div>
+              <h1 className="text-4xl font-black tracking-tighter text-black uppercase transform -rotate-1">Unbiased</h1>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <form onSubmit={(e) => { e.preventDefault(); if (query) window.location.href = `/search?q=${encodeURIComponent(query)}`; }} className="relative max-w-2xl">
+              <input
+                type="text"
+                placeholder="Search news with AI..."
+                defaultValue={query}
+                onChange={(e) => {
+                  const newQuery = e.target.value;
+                  if (newQuery && newQuery !== query) {
+                    const timer = setTimeout(() => {
+                      window.location.href = `/search?q=${encodeURIComponent(newQuery)}`;
+                    }, 1000);
+                    return () => clearTimeout(timer);
+                  }
+                }}
+                className="w-full px-6 py-4 bg-white border-4 border-black font-bold text-black placeholder-stone-500 focus:outline-none neo-shadow"
+              />
+              <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-black">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </form>
+            <p className="text-black mt-3 text-base font-bold">Showing results for "{query}"</p>
+          </div>
         </div>
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-12">
         {loading && (
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-stone-900"></div>
-            <p className="mt-4 text-stone-600 font-light">Searching for news articles...</p>
+            <div className="text-black font-black text-4xl uppercase animate-pulse">Searching...</div>
           </div>
         )}
 
         {error && (
           <div className="text-center py-12">
-            <p className="text-rose-600 font-light">{error}</p>
-            <Link 
-              href="/" 
-              className="mt-4 inline-block text-stone-700 hover:text-stone-900 font-light underline"
+            <p className="text-black font-black text-2xl uppercase mb-4">{error}</p>
+            <Link
+              href="/"
+              className="inline-block bg-purple-400 text-black border-4 border-black px-6 py-3 font-black uppercase neo-shadow hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
             >
               Return to homepage
             </Link>
@@ -121,10 +174,10 @@ function SearchResults() {
 
         {!loading && !error && !article && (
           <div className="text-center py-12">
-            <p className="text-stone-600 font-light">No results found for "{query}"</p>
+            <p className="text-black font-black text-2xl uppercase mb-4">No results found for "{query}"</p>
             <Link
               href="/"
-              className="mt-4 inline-block text-stone-700 hover:text-stone-900 font-light underline"
+              className="inline-block bg-purple-400 text-black border-4 border-black px-6 py-3 font-black uppercase neo-shadow hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
             >
               Return to homepage
             </Link>
@@ -132,80 +185,80 @@ function SearchResults() {
         )}
 
         {!loading && !error && article && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             <div className="mb-8">
-              <h2 className="text-2xl font-light text-stone-900 mb-2">
+              <h2 className="text-4xl font-black text-black uppercase mb-3 transform -rotate-1">
                 Analysis Results
               </h2>
-              <p className="text-stone-600 font-light">Multiple perspectives on "{query}"</p>
+              <p className="text-black font-bold text-lg">Multiple perspectives on "{query}"</p>
             </div>
 
-            <div className="block bg-[#fefdfb] border border-stone-200 rounded-3xl p-10 shadow-sm">
+            <div className="block bg-white border-4 border-black p-10 neo-shadow-lg">
               <div className="flex items-start justify-between gap-8">
-                <div className="flex-1 space-y-5">
-                  <h2 className="text-3xl font-light text-stone-900 leading-tight">
+                <div className="flex-1 space-y-6">
+                  <h2 className="text-4xl font-black text-black uppercase leading-tight">
                     {article.title}
                   </h2>
-                  <p className="text-stone-600 text-lg font-light leading-relaxed">
+                  <p className="text-black text-lg font-bold leading-relaxed">
                     {article.summary}
                   </p>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6 pt-6 border-t border-stone-150">
-                    <div className="space-y-3 p-4 bg-rose-50/30 rounded-xl border border-rose-100/50">
-                      <h4 className="text-xs font-semibold text-rose-700 uppercase tracking-wider">For</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 pt-8 border-t-4 border-black">
+                    <div className="bg-purple-300 border-4 border-black p-5 neo-shadow-purple hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">
+                      <h4 className="text-base font-black text-black uppercase tracking-tight mb-3">● For</h4>
                       {article.perspectives.for.length > 0 ? (
-                        <ul className="space-y-2 list-disc list-inside text-sm text-stone-700 font-light leading-relaxed">
+                        <ul className="space-y-2 list-disc list-inside text-black font-bold leading-snug">
                           {article.perspectives.for.map((point, idx) => (
                             <li key={idx} className="pl-1">{point}</li>
                           ))}
                         </ul>
                       ) : (
-                        <p className="text-sm text-stone-500 italic">No supporting points found</p>
+                        <p className="text-black font-bold">No supporting points found</p>
                       )}
                     </div>
-                    <div className="space-y-3 p-4 bg-amber-50/30 rounded-xl border border-amber-100/50">
-                      <h4 className="text-xs font-semibold text-amber-700 uppercase tracking-wider">Unbiased</h4>
+                    <div className="bg-stone-200 border-4 border-black p-5 neo-shadow-gray hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">
+                      <h4 className="text-base font-black text-black uppercase tracking-tight mb-3">● Unbiased</h4>
                       {article.perspectives.neutral.length > 0 ? (
-                        <ul className="space-y-2 list-disc list-inside text-sm text-stone-700 font-light leading-relaxed">
+                        <ul className="space-y-2 list-disc list-inside text-black font-bold leading-snug">
                           {article.perspectives.neutral.map((point, idx) => (
                             <li key={idx} className="pl-1">{point}</li>
                           ))}
                         </ul>
                       ) : (
-                        <p className="text-sm text-stone-500 italic">No neutral facts found</p>
+                        <p className="text-black font-bold">No neutral facts found</p>
                       )}
                     </div>
-                    <div className="space-y-3 p-4 bg-emerald-50/30 rounded-xl border border-emerald-100/50">
-                      <h4 className="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Against</h4>
+                    <div className="bg-orange-300 border-4 border-black p-5 neo-shadow-orange hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">
+                      <h4 className="text-base font-black text-black uppercase tracking-tight mb-3">● Against</h4>
                       {article.perspectives.against.length > 0 ? (
-                        <ul className="space-y-2 list-disc list-inside text-sm text-stone-700 font-light leading-relaxed">
+                        <ul className="space-y-2 list-disc list-inside text-black font-bold leading-snug">
                           {article.perspectives.against.map((point, idx) => (
                             <li key={idx} className="pl-1">{point}</li>
                           ))}
                         </ul>
                       ) : (
-                        <p className="text-sm text-stone-500 italic">No opposing points found</p>
+                        <p className="text-black font-bold">No opposing points found</p>
                       )}
                     </div>
                   </div>
 
                   {article.sources && article.sources.length > 0 && (
-                    <div className="mt-8 pt-6 border-t border-stone-200">
-                      <h3 className="text-lg font-light text-stone-900 mb-4">Sources</h3>
-                      <ul className="space-y-2">
+                    <div className="mt-8 pt-6 border-t-4 border-black">
+                      <h3 className="text-2xl font-black text-black uppercase mb-4">Sources</h3>
+                      <ul className="space-y-3">
                         {article.sources.map((source) => (
-                          <li key={source.id} className="text-sm text-stone-600 font-light">
-                            <span className="font-medium text-stone-700">[{source.id}]</span>{' '}
+                          <li key={source.id} className="text-base text-black font-bold">
+                            <span className="bg-yellow-300 px-2 py-1 border-2 border-black">[{source.id}]</span>{' '}
                             <a
                               href={source.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="hover:text-stone-900 underline"
+                              className="hover:bg-yellow-300 underline"
                             >
                               {source.name}
                             </a>
                             {source.publishedAt && (
-                              <span className="text-stone-500 ml-2">
+                              <span className="ml-2">
                                 ({new Date(source.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })})
                               </span>
                             )}
@@ -221,7 +274,7 @@ function SearchResults() {
             <div className="text-center pt-8">
               <Link
                 href="/"
-                className="inline-block text-stone-700 hover:text-stone-900 font-light underline"
+                className="inline-block bg-purple-400 text-black border-4 border-black px-8 py-4 font-black uppercase neo-shadow hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
               >
                 Return to featured stories
               </Link>
@@ -236,10 +289,9 @@ function SearchResults() {
 export default function SearchPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#fafaf9] flex items-center justify-center">
+      <div className="min-h-screen bg-yellow-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-stone-900"></div>
-          <p className="mt-4 text-stone-600 font-light">Loading search...</p>
+          <div className="text-black font-black text-4xl uppercase animate-pulse">Loading search...</div>
         </div>
       </div>
     }>
