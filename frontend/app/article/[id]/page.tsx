@@ -4,9 +4,10 @@ import { use, useState } from "react";
 import Link from "next/link";
 import { mockArticles, mockComments, mockCommentsSummary } from "@/lib/data";
 
-export default function ArticlePage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams?: { fromSearch?: string } }) {
+export default function ArticlePage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ fromSearch?: string }> }) {
   const { id } = use(params);
-  const isFromSearch = searchParams?.fromSearch === 'true';
+  const resolvedSearchParams = use(searchParams);
+  const isFromSearch = resolvedSearchParams?.fromSearch === 'true';
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [comments, setComments] = useState(mockComments[id] || []);
   const [newComment, setNewComment] = useState("");
@@ -59,12 +60,15 @@ export default function ArticlePage({ params, searchParams }: { params: Promise<
   return (
     <div className="min-h-screen bg-[#fafaf9]">
       {/* Header */}
-      <header className="bg-[#f5f4f0] border-b border-stone-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-6 flex items-center gap-4">
-          <Link href="/" className="text-stone-600 hover:text-stone-900 transition-colors font-light">
-            ← Back
+      <header className="bg-[#f5f4f0] border-b border-stone-200 sticky top-0 z-10 backdrop-blur-sm bg-[#f5f4f0]/95">
+        <div className="max-w-7xl mx-auto px-6 py-7 flex items-center gap-4">
+          <Link href="/" className="text-stone-600 hover:text-stone-900 transition-colors font-light flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back
           </Link>
-          <h1 className="text-xl font-light tracking-tight text-stone-900">Unbiased</h1>
+          <h1 className="text-2xl font-light tracking-tight text-stone-900">Unbiased.</h1>
         </div>
       </header>
 
@@ -73,23 +77,23 @@ export default function ArticlePage({ params, searchParams }: { params: Promise<
         <div className="flex gap-8 items-start">
           {/* Article Content */}
           <main className="flex-1" onTouchEnd={handleSwipe}>
-            <article className="bg-[#fefdfb] border border-stone-200 rounded-2xl p-10">
-              <div className="mb-8">
+            <article className="bg-[#fefdfb] border border-stone-200 rounded-3xl p-12 shadow-sm">
+              <div className="mb-10">
                 <div className="mb-6">
-                  <h1 className="text-4xl font-light text-stone-900 leading-tight">
+                  <h1 className="text-5xl font-light text-stone-900 leading-tight tracking-tight">
                     {article.title}
                   </h1>
                 </div>
 
                 <div className="flex items-center gap-4 text-sm text-stone-500 font-light">
-                  <span className="text-stone-700">{article.source}</span>
-                  <span className="w-1 h-1 rounded-full bg-stone-300"></span>
+                  <span className="text-stone-700 font-medium">{article.source}</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-stone-300"></span>
                   <span>{new Date(article.publishedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                 </div>
               </div>
 
               <div className="prose prose-stone max-w-none">
-                <p className="text-lg text-stone-700 leading-relaxed font-light">
+                <p className="text-xl text-stone-700 leading-relaxed font-light">
                   {article.content}
                 </p>
               </div>
