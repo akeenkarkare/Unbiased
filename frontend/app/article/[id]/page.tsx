@@ -17,7 +17,6 @@ export default function ArticlePage({ params, searchParams }: { params: Promise<
   const [article, setArticle] = useState<any>(null);
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [article, setArticle] = useState<any>(null);
 
   const commentsSummary = undefined; // TODO: Generate AI summary
 
