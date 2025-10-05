@@ -8,8 +8,9 @@ import { getCommentCount } from "@/lib/supabaseHelpers";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [articles, setArticles] = useState(mockArticles);
+  const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const router = useRouter();
 
@@ -18,8 +19,20 @@ export default function Home() {
   }, []);
 
   const fetchArticles = async () => {
+    const timeoutId = setTimeout(() => {
+      setError('Taking longer than expected to load articles. Please refresh the page.');
+      setLoading(false);
+    }, 15000); // 15 second timeout
+
     try {
       const response = await fetch('/api/articles');
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch articles');
+      }
+
       const data = await response.json();
 
       if (data.articles && data.articles.length > 0) {
@@ -33,10 +46,13 @@ export default function Home() {
           })
         );
         setCommentCounts(counts);
+      } else {
+        setError('No articles found. Please try again later.');
       }
     } catch (error) {
+      clearTimeout(timeoutId);
       console.error('Error fetching articles:', error);
-      // Fall back to mock articles on error
+      setError('Error loading articles. Please refresh the page.');
     } finally {
       setLoading(false);
     }
@@ -82,8 +98,28 @@ export default function Home() {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-12">
-        <div className="space-y-8">
-          {sortedArticles.map((article) => (
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-stone-900"></div>
+            <p className="mt-4 text-stone-600 font-light">Loading articles...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-rose-600 font-light">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 px-6 py-2 bg-stone-800 text-stone-50 rounded-xl font-light hover:bg-stone-700 transition-colors"
+            >
+              Refresh Page
+            </button>
+          </div>
+        ) : articles.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-stone-600 font-light">No articles available</p>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {sortedArticles.map((article) => (
             <Link
               key={article.id}
               href={`/article/${article.id}`}
@@ -125,8 +161,9 @@ export default function Home() {
                 </div>
               </div>
             </Link>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );
