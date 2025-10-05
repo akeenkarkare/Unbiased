@@ -16,31 +16,41 @@ export default function ArticlePage({ params, searchParams }: { params: Promise<
   const [loading, setLoading] = useState(true);
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [article, setArticle] = useState<any>(null);
 
-  const article = mockArticles.find((a) => a.id === id);
   const commentsSummary = mockCommentsSummary[id];
 
   // Only show comments for homepage articles, not search results
   const showComments = !isFromSearch;
 
   useEffect(() => {
-    const loadComments = async () => {
-      if (!showComments) {
-        setLoading(false);
-        return;
-      }
-
+    const loadData = async () => {
       try {
-        const fetchedComments = await getCommentsForArticle(id);
-        setComments(fetchedComments);
+        // Fetch article from API
+        const articleResponse = await fetch(`/api/articles/${id}`);
+        if (articleResponse.ok) {
+          const articleData = await articleResponse.json();
+          setArticle(articleData.article);
+        } else {
+          // Fallback to mock data
+          setArticle(mockArticles.find((a) => a.id === id));
+        }
+
+        // Fetch comments if needed
+        if (showComments) {
+          const fetchedComments = await getCommentsForArticle(id);
+          setComments(fetchedComments);
+        }
       } catch (error) {
-        console.error('Error fetching comments:', error);
+        console.error('Error fetching data:', error);
+        // Fallback to mock data on error
+        setArticle(mockArticles.find((a) => a.id === id));
       } finally {
         setLoading(false);
       }
     };
 
-    loadComments();
+    loadData();
   }, [id, showComments]);
 
   if (loading) {

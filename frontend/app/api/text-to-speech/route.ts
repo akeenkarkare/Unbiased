@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Using ElevenLabs voice ID for a neutral, professional voice
-    const voiceId = 'pNInz6obpgDQGcFmaJgB'; // Adam voice
+    const voiceId = 's3TPKV1kjDlVtZbl4Ksh'; // Adam voice
 
     const response = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
