@@ -34,7 +34,7 @@ STRICT JSON FORMAT (copy exactly):
 RULES:
 1. Start response with { and end with }
 2. NO markdown, NO backticks, NO code blocks
-3. Each perspective array must have at least 1 point
+3. Each perspective array must have 2-5 points (MAX 5 points per category)
 4. Keep points concise (under 150 characters each)
 5. Return ONLY the JSON object`;
 
@@ -168,7 +168,7 @@ RULES:
         article.perspectives = { for: [], against: [], neutral: [] };
       }
 
-      // Ensure all perspective arrays exist
+      // Ensure all perspective arrays exist and limit to 5 points
       ['for', 'against', 'neutral'].forEach(key => {
         if (!article.perspectives[key]) {
           article.perspectives[key] = [];
@@ -176,6 +176,10 @@ RULES:
           article.perspectives[key] = [article.perspectives[key]];
         } else if (!Array.isArray(article.perspectives[key])) {
           article.perspectives[key] = [];
+        }
+        // Limit to max 5 points per category
+        if (article.perspectives[key].length > 5) {
+          article.perspectives[key] = article.perspectives[key].slice(0, 5);
         }
       });
 
