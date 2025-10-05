@@ -140,6 +140,7 @@ function SearchResults() {
               <p className="text-stone-600 font-light">Multiple perspectives on "{query}"</p>
             </div>
 
+<<<<<<< HEAD
             <div className="block bg-[#fefdfb] border border-stone-200 rounded-3xl p-10 shadow-sm">
               <div className="flex items-start justify-between gap-8">
                 <div className="flex-1 space-y-5">
@@ -186,6 +187,43 @@ function SearchResults() {
                       ) : (
                         <p className="text-sm text-stone-500 italic">No opposing points found</p>
                       )}
+=======
+            {articles.map((article) => (
+              <div
+                key={article.id}
+                className="block bg-[#fefdfb] border border-stone-200 rounded-3xl p-10 shadow-sm hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-start justify-between gap-8">
+                  <div className="flex-1 space-y-5">
+                    <h2 className="text-3xl font-light text-stone-900 leading-tight">
+                      {article.title}
+                    </h2>
+                    <p className="text-stone-600 text-lg font-light leading-relaxed">
+                      {article.summary}
+                    </p>
+
+                    {article.perspectives && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-stone-100">
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-medium text-rose-700 uppercase tracking-wide">For</h4>
+                          <p className="text-sm text-stone-600 font-light leading-relaxed">{article.perspectives.for}</p>
+                        </div>
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-medium text-amber-700 uppercase tracking-wide">Unbiased</h4>
+                          <p className="text-sm text-stone-600 font-light leading-relaxed">{article.perspectives.neutral}</p>
+                        </div>
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-medium text-emerald-700 uppercase tracking-wide">Against</h4>
+                          <p className="text-sm text-stone-600 font-light leading-relaxed">{article.perspectives.against}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-4 text-sm text-stone-500 font-light pt-3">
+                      <span className="text-stone-700 font-medium">{article.source}</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-stone-300"></span>
+                      <span>{new Date(article.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+>>>>>>> 51da2a036e1f7b1286d1f95e4fa8574de886df15
                     </div>
                   </div>
 
