@@ -14,34 +14,43 @@ export default function ArticlePage({ params, searchParams }: { params: Promise<
   const [newComment, setNewComment] = useState("");
   const [authorName, setAuthorName] = useState("");
   const [loading, setLoading] = useState(true);
+  const [article, setArticle] = useState<any>(null);
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
-  const article = mockArticles.find((a) => a.id === id);
-  const commentsSummary = mockCommentsSummary[id];
+  const commentsSummary = undefined; // TODO: Generate AI summary
 
   // Only show comments for homepage articles, not search results
   const showComments = !isFromSearch;
 
   useEffect(() => {
-    const loadComments = async () => {
-      if (!showComments) {
-        setLoading(false);
-        return;
-      }
-
+    const fetchData = async () => {
       try {
-        const fetchedComments = await getCommentsForArticle(id);
-        setComments(fetchedComments);
+        // Fetch article from API
+        const articleResponse = await fetch(`/api/articles/${id}`);
+        if (articleResponse.ok) {
+          const articleData = await articleResponse.json();
+          setArticle(articleData.article);
+        } else {
+          // Fallback to mock data
+          setArticle(mockArticles.find((a) => a.id === id));
+        }
+
+        // Fetch comments from Supabase
+        if (!isFromSearch) {
+          const commentsData = await getCommentsForArticle(id);
+          setComments(commentsData);
+        }
       } catch (error) {
-        console.error('Error fetching comments:', error);
+        console.error('Error fetching data:', error);
+        setArticle(mockArticles.find((a) => a.id === id));
       } finally {
         setLoading(false);
       }
     };
 
-    loadComments();
-  }, [id, showComments]);
+    fetchData();
+  }, [id, isFromSearch]);
 
   if (loading) {
     return (
