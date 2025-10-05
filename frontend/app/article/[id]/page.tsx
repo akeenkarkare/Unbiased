@@ -12,6 +12,8 @@ export default function ArticlePage({ params, searchParams }: { params: Promise<
   const [comments, setComments] = useState(mockComments[id] || []);
   const [newComment, setNewComment] = useState("");
   const [authorName, setAuthorName] = useState("");
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
   const article = mockArticles.find((a) => a.id === id);
   const commentsSummary = mockCommentsSummary[id];
@@ -57,6 +59,36 @@ export default function ArticlePage({ params, searchParams }: { params: Promise<
     }
   };
 
+  const handleGenerateAudio = async () => {
+    if (isGeneratingAudio || !article) return;
+
+    setIsGeneratingAudio(true);
+    try {
+      const response = await fetch('/api/text-to-speech', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: `${article.title}. ${article.content}`,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate audio');
+      }
+
+      const audioBlob = await response.blob();
+      const url = URL.createObjectURL(audioBlob);
+      setAudioUrl(url);
+    } catch (error) {
+      console.error('Error generating audio:', error);
+      alert('Failed to generate audio. Please try again.');
+    } finally {
+      setIsGeneratingAudio(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#fafaf9]">
       {/* Header */}
@@ -85,11 +117,45 @@ export default function ArticlePage({ params, searchParams }: { params: Promise<
                   </h1>
                 </div>
 
-                <div className="flex items-center gap-4 text-sm text-stone-500 font-light">
-                  <span className="text-stone-700 font-medium">{article.source}</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-stone-300"></span>
-                  <span>{new Date(article.publishedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 text-sm text-stone-500 font-light">
+                    <span className="text-stone-700 font-medium">{article.source}</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-stone-300"></span>
+                    <span>{new Date(article.publishedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                  </div>
+
+                  <button
+                    onClick={handleGenerateAudio}
+                    disabled={isGeneratingAudio}
+                    className="flex items-center gap-2 px-4 py-2 bg-stone-800 text-stone-50 rounded-xl font-light hover:bg-stone-700 transition-colors disabled:bg-stone-400 disabled:cursor-not-allowed text-sm"
+                  >
+                    {isGeneratingAudio ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15.536a5 5 0 001.414 1.414m2.828-9.9a9 9 0 00-2.828 2.828M12 8v8m0 0l-3-3m3 3l3-3" />
+                        </svg>
+                        Listen
+                      </>
+                    )}
+                  </button>
                 </div>
+
+                {audioUrl && (
+                  <div className="mt-4">
+                    <audio controls className="w-full">
+                      <source src={audioUrl} type="audio/mpeg" />
+                      Your browser does not support the audio element.
+                    </audio>
+                  </div>
+                )}
               </div>
 
               <div className="prose prose-stone max-w-none">
