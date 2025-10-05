@@ -96,12 +96,14 @@ IMPORTANT: Your entire response must be valid JSON that can be parsed directly. 
 
     console.log(`[${requestId}] Calling Gemini API...`);
     console.log(`[${requestId}] FULL PROMPT BEING SENT:\n`, prompt);
+
+    // NOTE: Google Search grounding requires PAID API tier ($35 per 1000 queries)
+    // Your API key doesn't have grounding enabled - you need to upgrade at aistudio.google.com
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
         temperature: 0.3,
-        tools: [{ googleSearch: {} }],
       },
     });
 
