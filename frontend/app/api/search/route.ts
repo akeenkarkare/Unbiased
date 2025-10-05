@@ -18,32 +18,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Gemini API key not configured' }, { status: 500 });
     }
 
-    const prompt = `Search and analyze current information about "${query}". Provide a balanced perspective analysis.
+    const prompt = `You are a JSON generator. Search and analyze "${query}". Return ONLY valid JSON with no extra text.
 
-TOPIC: ${query}
-
-INSTRUCTIONS:
-- Search for 5-7 recent, diverse sources about this topic
-- Find different viewpoints (mainstream, alternative, international perspectives)
-- Extract key supporting, opposing, and neutral points
-- Return ONLY valid JSON, no markdown or extra text
-
-OUTPUT FORMAT:
+STRICT JSON FORMAT (copy exactly):
 {
-  "title": "Main topic about ${query}",
-  "summary": "Brief explanation (max 100 words)",
+  "title": "Brief title about ${query}",
+  "summary": "2-3 sentence summary",
   "perspectives": {
-    "for": ["Supporting point here", "Another supporting point"],
-    "against": ["Opposing point here", "Another opposing point"],
-    "neutral": ["Neutral fact here", "Another neutral fact"]
-  },
-  "sources": []
+    "for": ["Point supporting ${query}", "Another supporting point"],
+    "against": ["Point against ${query}", "Another opposing point"],
+    "neutral": ["Factual point about ${query}", "Another neutral fact"]
+  }
 }
 
-CRITICAL:
-- Return pure JSON only (start with {, end with })
-- Do NOT include markdown code blocks or backticks
-- Sources will be added from grounding metadata`;
+RULES:
+1. Start response with { and end with }
+2. NO markdown, NO backticks, NO code blocks
+3. Each perspective array must have at least 1 point
+4. Keep points concise (under 150 characters each)
+5. Return ONLY the JSON object`;
 
     const ai = new GoogleGenAI({ apiKey });
     const groundingTool = {
@@ -138,51 +131,76 @@ CRITICAL:
     console.log(`[${requestId}] Generated text length:`, generatedText.length);
     console.log(`[${requestId}] First 200 chars:`, generatedText.substring(0, 200));
 
-    // Extract JSON from response
+    // Extract JSON from response with multiple strategies
     let article: any = null;
-    try {
-      const codeBlockMatch = generatedText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
-      let jsonText = codeBlockMatch?.[1] || generatedText.substring(
-        generatedText.indexOf('{'),
-        generatedText.lastIndexOf('}') + 1
-      );
 
-      console.log(`[${requestId}] Extracted JSON (first 500 chars):`, jsonText.substring(0, 500));
+    // Strategy 1: Try to find JSON in code blocks
+    const codeBlockMatch = generatedText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+
+    // Strategy 2: Try to find JSON between first { and last }
+    const firstBrace = generatedText.indexOf('{');
+    const lastBrace = generatedText.lastIndexOf('}');
+
+    // Strategy 3: Clean up common issues
+    let jsonText = '';
+    if (codeBlockMatch?.[1]) {
+      jsonText = codeBlockMatch[1];
+      console.log(`[${requestId}] Found JSON in code block`);
+    } else if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      jsonText = generatedText.substring(firstBrace, lastBrace + 1);
+      console.log(`[${requestId}] Extracted JSON between braces`);
+    } else {
+      // Try to clean the whole text
+      jsonText = generatedText.trim().replace(/^[^{]*/, '').replace(/[^}]*$/, '');
+      console.log(`[${requestId}] Cleaned entire text`);
+    }
+
+    console.log(`[${requestId}] JSON to parse (first 500 chars):`, jsonText.substring(0, 500));
+
+    try {
       article = JSON.parse(jsonText);
 
-      // Validate structure
-      if (!article.perspectives?.for || !article.perspectives?.against || !article.perspectives?.neutral) {
-        throw new Error('Invalid article structure');
+      // Validate and fix structure
+      if (!article.title) article.title = `Analysis of "${query}"`;
+      if (!article.summary) article.summary = 'Analysis of the topic.';
+
+      if (!article.perspectives) {
+        article.perspectives = { for: [], against: [], neutral: [] };
       }
 
-      // Ensure arrays
+      // Ensure all perspective arrays exist
       ['for', 'against', 'neutral'].forEach(key => {
-        if (typeof article.perspectives[key] === 'string') {
+        if (!article.perspectives[key]) {
+          article.perspectives[key] = [];
+        } else if (typeof article.perspectives[key] === 'string') {
           article.perspectives[key] = [article.perspectives[key]];
+        } else if (!Array.isArray(article.perspectives[key])) {
+          article.perspectives[key] = [];
         }
       });
 
       article.id = article.id || `search-${Date.now()}`;
-
-      // Use grounding sources if available, otherwise use JSON sources
       article.sources = extractedSources.length > 0 ? extractedSources : (article.sources || []);
 
-      console.log(`[${requestId}] Parsed successfully. Sources: ${article.sources.length}`);
+      console.log(`[${requestId}] ✅ Parsed successfully. Sources: ${article.sources.length}`);
     } catch (parseError) {
-      console.error(`[${requestId}] JSON parse error:`, parseError);
-      console.error(`[${requestId}] Text:`, generatedText);
+      console.error(`[${requestId}] ❌ JSON parse failed:`, parseError);
+      console.error(`[${requestId}] Failed text:`, jsonText.substring(0, 1000));
 
+      // Last resort: return error with sources
       article = {
         id: Date.now().toString(),
-        title: `Analysis of "${query}"`,
-        summary: 'Unable to parse AI response. Please try again.',
+        title: `Search Results: ${query}`,
+        summary: 'We found sources but had trouble parsing the analysis. Please try your search again.',
         perspectives: {
-          for: ['Error: ' + generatedText.substring(0, 100) + '...'],
-          against: [],
-          neutral: []
+          for: ['Unable to extract supporting points - please try again'],
+          against: ['Unable to extract opposing points - please try again'],
+          neutral: ['Unable to extract neutral facts - please try again']
         },
         sources: extractedSources
       };
+
+      console.log(`[${requestId}] ⚠️ Returning fallback response`);
     }
 
     const totalTime = Date.now() - startTime;
