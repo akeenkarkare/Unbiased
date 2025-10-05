@@ -1,17 +1,19 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import Link from "next/link";
-import { mockArticles, mockComments, mockCommentsSummary } from "@/lib/data";
+import { mockArticles, mockCommentsSummary } from "@/lib/data";
+import { getCommentsForArticle, addComment } from "@/lib/supabaseHelpers";
 
-export default function ArticlePage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ fromSearch?: string }> }) {
+export default function ArticlePage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams?: Promise<{ fromSearch?: string }> }) {
   const { id } = use(params);
-  const resolvedSearchParams = use(searchParams);
-  const isFromSearch = resolvedSearchParams?.fromSearch === 'true';
+  const resolvedSearchParams = searchParams ? use(searchParams) : {};
+  const isFromSearch = resolvedSearchParams.fromSearch === 'true';
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
-  const [comments, setComments] = useState(mockComments[id] || []);
+  const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
   const [authorName, setAuthorName] = useState("");
+  const [loading, setLoading] = useState(true);
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
@@ -20,6 +22,34 @@ export default function ArticlePage({ params, searchParams }: { params: Promise<
 
   // Only show comments for homepage articles, not search results
   const showComments = !isFromSearch;
+
+  useEffect(() => {
+    const loadComments = async () => {
+      if (!showComments) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const fetchedComments = await getCommentsForArticle(id);
+        setComments(fetchedComments);
+      } catch (error) {
+        console.error('Error fetching comments:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadComments();
+  }, [id, showComments]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#fafaf9]">
+        <div className="text-stone-500 font-light">Loading...</div>
+      </div>
+    );
+  }
 
   if (!article) {
     return (
@@ -34,20 +64,18 @@ export default function ArticlePage({ params, searchParams }: { params: Promise<
     );
   }
 
-  const handleAddComment = () => {
+  const handleAddComment = async () => {
     if (!newComment.trim() || !authorName.trim()) return;
 
-    const comment = {
-      id: `c${Date.now()}`,
-      articleId: id,
-      author: authorName,
-      content: newComment,
-      createdAt: new Date().toISOString(),
-    };
-
-    setComments([...comments, comment]);
-    setNewComment("");
-    setAuthorName("");
+    try {
+      const comment = await addComment(id, authorName, newComment);
+      setComments([...comments, comment]);
+      setNewComment("");
+      setAuthorName("");
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      alert('Failed to add comment. Please try again.');
+    }
   };
 
   const handleSwipe = (e: React.TouchEvent) => {
@@ -92,7 +120,7 @@ export default function ArticlePage({ params, searchParams }: { params: Promise<
   return (
     <div className="min-h-screen bg-[#fafaf9]">
       {/* Header */}
-      <header className="bg-[#f5f4f0] border-b border-stone-200 sticky top-0 z-10 backdrop-blur-sm bg-[#f5f4f0]/95">
+      <header className="border-b border-stone-200 sticky top-0 z-10 backdrop-blur-sm bg-[#f5f4f0]/95">
         <div className="max-w-7xl mx-auto px-6 py-7 flex items-center gap-4">
           <Link href="/" className="text-stone-600 hover:text-stone-900 transition-colors font-light flex items-center gap-2">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -271,7 +299,7 @@ function CommentsSection({
                     {comment.author}
                   </span>
                   <span className="text-xs text-stone-500 font-light">
-                    {new Date(comment.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    {new Date(comment.created_at || comment.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </span>
                 </div>
                 <p className="text-stone-700 font-light leading-relaxed">{comment.content}</p>
